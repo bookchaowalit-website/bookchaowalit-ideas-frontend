@@ -13,18 +13,18 @@ colors:
   danger-coral: "#ff9276"
 typography:
   display:
-    fontFamily: "Geist, Arial, sans-serif"
+    fontFamily: "Archivo, Arial, sans-serif"
     fontSize: "clamp(3.2rem, 8vw, 6.6rem)"
     fontWeight: 560
     lineHeight: 0.88
     letterSpacing: "-0.085em"
   body:
-    fontFamily: "Geist, Arial, sans-serif"
+    fontFamily: "Archivo, Arial, sans-serif"
     fontSize: "1rem"
     fontWeight: 400
     lineHeight: 1.65
   data:
-    fontFamily: "Geist Mono, SFMono-Regular, Consolas, monospace"
+    fontFamily: "DM Mono, SFMono-Regular, Consolas, monospace"
     fontSize: "0.65rem"
     fontWeight: 400
     lineHeight: 1.4
