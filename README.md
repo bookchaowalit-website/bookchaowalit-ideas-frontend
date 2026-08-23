@@ -1,20 +1,19 @@
-# Idea Board
+# Idea Field
 
-Capture product ideas with status.
+A private-by-default browser instrument for moving loose thoughts one next step forward.
 
-## Features
-- CRUD list
-- Search
-- localStorage
+## What it does
 
-## Limitations
-- Local only
+- Captures a thought, working note, and current signal.
+- Filters and searches local ideas.
+- Shows a selected reading with its context and recorded date.
+- Keeps additions in this browser only; there is no backend, account, ranking, or fake AI insight.
 
 ## Run
+
 ```bash
 npm install
 npm run dev
 ```
 
-## Honesty
-Portfolio demo. Not multi-tenant SaaS. Prefer local-only state over fake production claims.
+Open `http://localhost:3000`.

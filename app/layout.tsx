@@ -8,16 +8,16 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Idea Board | Bookchaowalit",
-  description: "Capture product ideas with status.",
+  title: "Idea Field | Bookchaowalit",
+  description: "A private-by-default instrument for moving loose thoughts one next step forward.",
   keywords: ["ideas", "portfolio"],
   authors: [{ name: "Bookchaowalit", url: "https://bookchaowalit.com" }],
   creator: "Bookchaowalit",
   metadataBase: new URL("https://bookchaowalit.com"),
   openGraph: {
     type: "website",
-    title: "Idea Board | Bookchaowalit",
-    description: "Capture product ideas with status.",
+    title: "Idea Field | Bookchaowalit",
+    description: "A private-by-default instrument for moving loose thoughts one next step forward.",
     siteName: "Bookchaowalit",
   },
   robots: { index: true, follow: true },

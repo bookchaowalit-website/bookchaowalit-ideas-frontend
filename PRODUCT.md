@@ -1,46 +1,47 @@
-# bookchaowalit-ideas-frontend — Product brief
+# Product
 
-**Slug:** `bookchaowalit-website/bookchaowalit-ideas-frontend`  
-**Generated:** 2026-08-11 (bulk Book Dev closeout)  
-**Status:** starter / portfolio boundary
+<!-- impeccable:product-schema 1 -->
 
-## Purpose
+## Platform
 
-Portfolio repository under Book Dev. This brief records ownership and the
-current honest status so the nested tree is not an empty shell in the task
-system.
+web
 
-## Runnable path
+## Users
 
-See `README.md` for install and run instructions when present.
+Solo operators and builders who collect more questions than they can move through at once.
 
-## Limits
+## Product Purpose
 
-- Not claimed as production-ready unless README and tests prove it.
-- Mobile smoke / emulator acceptance is separate and toolchain-dependent.
+Idea Field gives loose product thoughts a visible next state: Seed, Shaping, Testing, or Parked. Success means a visitor can capture a rough idea, find it later, and read its current context without pretending that a local list is a roadmap or an AI recommendation engine.
 
-## Source README excerpt
+## Positioning
 
-```
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is a private-by-default thinking instrument: a small field notebook for turning an idea into its next move. It is intentionally more honest and useful than a generic CRUD board.
 
-## Getting Started
+## Operating Context
 
-First, run the development server:
+The current app is a browser-only portfolio demonstration. Ideas are seeded with deterministic local examples and user additions stay in localStorage. There is no account, shared workspace, ranking model, or backend sync.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Capabilities and Constraints
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Capture a title, working note, and current signal.
+- Search the field and filter by Seed, Shaping, Testing, or Parked.
+- Select a thought to read its context and remove it from this browser.
+- Keep interaction usable with keyboard and touch input at mobile widths.
+- Do not introduce fake prioritisation, collaboration claims, or AI-generated insights.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Evidence on Hand
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize an
-```
+- Existing implementation: `app/page.tsx`, `app/globals.css`, and `app/layout.tsx`.
+- Evidence is limited to deterministic sample thoughts and browser-local state; no production dataset is available.
+
+## Product Principles
+
+- Preserve the roughness long enough to learn from it.
+- Status names a next move, not a confidence score.
+- A thought should remain inspectable without becoming a dashboard tile.
+- Local-only behavior must be stated plainly.
+
+## Accessibility & Inclusion
+
+Use semantic forms and buttons, visible focus, strong contrast, readable body measure, clear live feedback, reduced-motion support, and no interaction that depends on color alone.

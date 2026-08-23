@@ -1,197 +1,241 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-function Shell({
-  title,
-  subtitle,
-  badge = "Portfolio demo · local-only",
-  children,
-}: {
+type Status = "Seed" | "Shaping" | "Testing" | "Parked";
+
+type Idea = {
+  id: string;
   title: string;
-  subtitle: string;
-  badge?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-black dark:text-zinc-100">
-      <div className="mx-auto max-w-6xl px-4 py-10">
-        <header className="mb-8">
-          <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">{badge}</p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight">{title}</h1>
-          <p className="mt-2 max-w-2xl text-sm text-zinc-600 dark:text-zinc-400">{subtitle}</p>
-        </header>
-        {children}
-        <footer className="mt-10 border-t border-zinc-200 pt-4 text-xs text-zinc-500 dark:border-zinc-800">
-          Honest demo: no multi-tenant backend. State (if any) stays in this browser.
-        </footer>
-      </div>
-    </div>
-  );
-}
+  body: string;
+  status: Status;
+  createdAt: number;
+};
 
-function Button({
-  children,
-  onClick,
-  variant = "primary",
-  disabled,
-  type = "button",
-  className = "",
-}: {
-  children: ReactNode;
-  onClick?: () => void;
-  variant?: "primary" | "secondary" | "ghost" | "danger";
-  disabled?: boolean;
-  type?: "button" | "submit";
-  className?: string;
-}) {
-  const base =
-    "inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium transition disabled:opacity-50 " +
-    className;
-  const styles =
-    variant === "primary"
-      ? "bg-zinc-900 text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900"
-      : variant === "secondary"
-        ? "bg-white text-zinc-900 ring-1 ring-zinc-200 hover:bg-zinc-100 dark:bg-zinc-900 dark:text-zinc-100 dark:ring-zinc-700"
-        : variant === "danger"
-          ? "bg-red-600 text-white hover:bg-red-500"
-          : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-900";
-  return (
-    <button type={type} disabled={disabled} onClick={onClick} className={`${base} ${styles}`}>
-      {children}
-    </button>
-  );
-}
+const STATUSES: Status[] = ["Seed", "Shaping", "Testing", "Parked"];
 
-const inputClass =
-  "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none ring-zinc-400 focus:ring-2 dark:border-zinc-700 dark:bg-zinc-950";
+const SEED: Idea[] = [
+  {
+    id: "last-useful-view",
+    title: "Make the last useful view easy to return to",
+    body: "A small product should remember the moment that helped, not just the account that visited.",
+    status: "Shaping",
+    createdAt: Date.parse("2026-08-18"),
+  },
+  {
+    id: "decision-trail",
+    title: "Export a decision trail without opening a spreadsheet",
+    body: "Turn a short experiment into a portable note: question, signal, decision, next move.",
+    status: "Testing",
+    createdAt: Date.parse("2026-08-15"),
+  },
+  {
+    id: "quiet-onboarding",
+    title: "A quieter first run for tools with many possibilities",
+    body: "Let a person choose one useful starting point before showing the full surface area.",
+    status: "Seed",
+    createdAt: Date.parse("2026-08-11"),
+  },
+];
 
 function useLocalStorage<T>(key: string, initial: T) {
   const [value, setValue] = useState<T>(initial);
   const [ready, setReady] = useState(false);
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem(key);
-      if (raw != null) setValue(JSON.parse(raw) as T);
+      // The browser store is external state; hydration intentionally follows this read.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (raw) setValue(JSON.parse(raw) as T);
     } catch {
-      /* ignore */
+      // Keep the deterministic seed if browser storage is unavailable.
     }
     setReady(true);
   }, [key]);
+
   useEffect(() => {
-    if (!ready) return;
-    localStorage.setItem(key, JSON.stringify(value));
+    if (ready) localStorage.setItem(key, JSON.stringify(value));
   }, [key, value, ready]);
+
   return [value, setValue] as const;
 }
 
-function uid() {
-  return crypto.randomUUID();
+function createId() {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `idea-${Date.now()}`;
 }
 
-async function copyText(text: string) {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-
-type Item = { id: string; title: string; body: string; status: string; createdAt: number };
-
-const SEED: Item[] = [{"title": "Dark mode polish", "body": "Tighten contrast", "status": "Backlog"}, {"title": "Export CSV", "body": "For power users", "status": "Doing"}].map((x: any, i: number) => ({
-  id: String(x.id ?? i + 1),
-  title: x.title,
-  body: x.body,
-  status: x.status,
-  createdAt: x.createdAt ?? Date.now() - i * 86400000,
-}));
-
-const FIELDS = [{"key": "title", "label": "Title", "type": "text"}, {"key": "body", "label": "Details", "type": "textarea"}, {"key": "status", "label": "Status", "type": "select", "options": ["Draft", "Active", "Done"]}] as { key: "title" | "body" | "status"; label: string; type: string; options?: string[] }[];
-
-export default function Home() {
-  const [items, setItems] = useLocalStorage<Item[]>("ideas-v1", SEED);
-  const [query, setQuery] = useState("");
-  const [draft, setDraft] = useState<Record<string, string>>(() =>
-    Object.fromEntries(FIELDS.map((f) => [f.key, f.options?.[0] ?? ""]))
-  );
-
-  const filtered = items.filter((it) =>
-    (it.title + it.body + it.status).toLowerCase().includes(query.toLowerCase())
-  );
-
-  const add = () => {
-    if (!String(draft.title || "").trim()) return;
-    setItems((prev) => [
-      {
-        id: uid(),
-        title: draft.title || "",
-        body: draft.body || "",
-        status: draft.status || "",
-        createdAt: Date.now(),
-      },
-      ...prev,
-    ]);
-    setDraft(Object.fromEntries(FIELDS.map((f) => [f.key, f.options?.[0] ?? ""])));
-  };
+function SignalBars({ seed }: { seed: string }) {
+  const bars = Array.from({ length: 22 }, (_, index) => {
+    const code = seed.charCodeAt(index % seed.length) || 47;
+    return 1 + ((code + index * 7) % 4);
+  });
 
   return (
-    <Shell title="Idea Board" subtitle="Capture product ideas with status.">
-      <div className="mb-4 flex flex-wrap gap-2">
-        <input className={`${inputClass} max-w-sm`} placeholder="Search" value={query} onChange={(e) => setQuery(e.target.value)} />
-        <span className="self-center text-sm text-zinc-500">{filtered.length} items</span>
-      </div>
-      <div className="mb-6 grid gap-2 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 md:grid-cols-2">
-        {FIELDS.map((f) => (
-          <label key={f.key} className="block space-y-1">
-            <span className="text-xs font-medium text-zinc-500">{f.label}</span>
-            {f.type === "textarea" ? (
-              <textarea
-                className={`${inputClass} min-h-[72px]`}
-                value={draft[f.key] || ""}
-                onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
-              />
-            ) : f.type === "select" ? (
-              <select
-                className={inputClass}
-                value={draft[f.key] || ""}
-                onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
-              >
-                {(f.options || []).map((o) => (
-                  <option key={o}>{o}</option>
+    <span className="idea-signal" aria-hidden="true">
+      {bars.map((width, index) => (
+        <i key={`${seed}-${index}`} style={{ width: `${width}px` }} />
+      ))}
+    </span>
+  );
+}
+
+export default function Home() {
+  const [ideas, setIdeas] = useLocalStorage<Idea[]>("idea-field-v2", SEED);
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<Status | "All">("All");
+  const [selectedId, setSelectedId] = useState<string | null>(SEED[0]?.id ?? null);
+  const [draft, setDraft] = useState({ title: "", body: "", status: "Seed" as Status });
+  const [notice, setNotice] = useState("");
+
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return ideas.filter((idea) => {
+      const matchesStatus = statusFilter === "All" || idea.status === statusFilter;
+      const matchesQuery = !needle || `${idea.title} ${idea.body} ${idea.status}`.toLowerCase().includes(needle);
+      return matchesStatus && matchesQuery;
+    });
+  }, [ideas, query, statusFilter]);
+
+  const selected = ideas.find((idea) => idea.id === selectedId) ?? filtered[0] ?? ideas[0];
+
+  function addIdea(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const title = draft.title.trim();
+    if (!title) {
+      setNotice("Give the thought a title before placing it in the field.");
+      return;
+    }
+
+    const idea: Idea = {
+      id: createId(),
+      title,
+      body: draft.body.trim() || "No detail yet. The next question can sharpen it.",
+      status: draft.status,
+      createdAt: Date.now(),
+    };
+    setIdeas((current) => [idea, ...current]);
+    setSelectedId(idea.id);
+    setStatusFilter("All");
+    setDraft({ title: "", body: "", status: "Seed" });
+    setNotice("Thought placed in the field.");
+  }
+
+  function removeIdea(id: string) {
+    setIdeas((current) => {
+      const remaining = current.filter((idea) => idea.id !== id);
+      if (selectedId === id) setSelectedId(remaining[0]?.id ?? null);
+      return remaining;
+    });
+    setNotice("Thought removed from this browser.");
+  }
+
+  return (
+    <main className="idea-field">
+      <div className="field-frame">
+        <header className="field-header">
+          <div className="field-mark">
+            <span className="mark-bars" aria-hidden="true"><i /><i /><i /><i /></span>
+            <span>IDEA / FIELD</span>
+          </div>
+          <p>LOCAL NOTEBOOK · {ideas.length.toString().padStart(2, "0")} THOUGHTS</p>
+        </header>
+
+        <section className="field-intro" aria-labelledby="page-title">
+          <div>
+            <h1 id="page-title">Give a loose thought one next move.</h1>
+            <p>A local idea instrument for keeping a question visible long enough to shape it, test it, or deliberately park it.</p>
+          </div>
+          <div className="field-readout">
+            <strong>{filtered.length.toString().padStart(2, "0")}</strong>
+            <span>VISIBLE<br />SIGNALS</span>
+          </div>
+        </section>
+
+        <section className="field-console" aria-label="Idea field workspace">
+          <div className="capture-bay">
+            <p className="section-label">CAPTURE BAY</p>
+            <h2>Put the rough version here.</h2>
+            <p className="capture-note">No scoring, no fake roadmap. A thought earns its place by getting a useful next sentence.</p>
+            <form onSubmit={addIdea} className="capture-form">
+              <label>
+                <span>Thought title</span>
+                <input value={draft.title} onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))} placeholder="What keeps returning?" required />
+              </label>
+              <label>
+                <span>Working note</span>
+                <textarea value={draft.body} onChange={(event) => setDraft((current) => ({ ...current, body: event.target.value }))} placeholder="What might be true?" rows={4} />
+              </label>
+              <label>
+                <span>Current signal</span>
+                <select value={draft.status} onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value as Status }))}>
+                  {STATUSES.map((status) => <option key={status}>{status}</option>)}
+                </select>
+              </label>
+              <button className="place-button" type="submit">Place in field <span aria-hidden="true">↗</span></button>
+            </form>
+            <p className="form-notice" role="status" aria-live="polite">{notice}</p>
+          </div>
+
+          <div className="field-reading">
+            <div className="reading-toolbar">
+              <label className="search-field">
+                <span>SCAN THE FIELD</span>
+                <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search thoughts" />
+              </label>
+              <div className="status-filter" role="group" aria-label="Filter thoughts by signal">
+                {(["All", ...STATUSES] as const).map((status) => (
+                  <button key={status} type="button" aria-pressed={statusFilter === status} onClick={() => setStatusFilter(status)}>{status}</button>
                 ))}
-              </select>
-            ) : (
-              <input
-                className={inputClass}
-                value={draft[f.key] || ""}
-                onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
-              />
-            )}
-          </label>
-        ))}
-        <div className="md:col-span-2">
-          <Button onClick={add}>Add</Button>
-        </div>
-      </div>
-      <ul className="space-y-2">
-        {filtered.map((it) => (
-          <li key={it.id} className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div>
-                <div className="font-medium">{it.title}</div>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{it.body}</p>
-                <span className="mt-2 inline-block rounded-full bg-zinc-100 px-2 py-0.5 text-xs dark:bg-zinc-900">{it.status}</span>
               </div>
-              <Button variant="ghost" onClick={() => setItems((prev) => prev.filter((x) => x.id !== it.id))}>
-                Delete
-              </Button>
             </div>
-          </li>
-        ))}
-      </ul>
-    </Shell>
+
+            <div className="reading-heading">
+              <p className="section-label">FIELD INDEX</p>
+              <span>{filtered.length} / {ideas.length} SHOWING</span>
+            </div>
+
+            {filtered.length > 0 ? (
+              <ul className="idea-list">
+                {filtered.map((idea) => (
+                  <li key={idea.id}>
+                    <button type="button" className={`idea-row${selected?.id === idea.id ? " is-selected" : ""}`} onClick={() => setSelectedId(idea.id)}>
+                      <span className="idea-row-topline"><span>{idea.status}</span><time dateTime={new Date(idea.createdAt).toISOString()}>{new Date(idea.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}</time></span>
+                      <strong>{idea.title}</strong>
+                      <span className="idea-row-bottom"><SignalBars seed={idea.title} /><span>{idea.body}</span></span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="empty-field"><strong>No signal in this range.</strong><span>Clear the scan or place a new thought in the field.</span></div>
+            )}
+
+            {selected && (
+              <article className="selected-reading" aria-labelledby="selected-title">
+                <div className="selected-rule" aria-hidden="true" />
+                <div className="selected-header">
+                  <p className="section-label">CURRENT READING</p>
+                  <button type="button" className="remove-button" onClick={() => removeIdea(selected.id)}>Remove</button>
+                </div>
+                <h2 id="selected-title">{selected.title}</h2>
+                <p>{selected.body}</p>
+                <div className="selected-meta">
+                  <span><b>STATE</b>{selected.status}</span>
+                  <span><b>RECORDED</b>{new Date(selected.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</span>
+                </div>
+              </article>
+            )}
+          </div>
+        </section>
+
+        <footer className="field-footer">
+          <span>IDEA / FIELD · PRIVATE BY DEFAULT</span>
+          <span>State stays in this browser. No account. No pretend intelligence.</span>
+        </footer>
+      </div>
+    </main>
   );
 }
